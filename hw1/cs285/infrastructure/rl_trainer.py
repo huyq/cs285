@@ -4,6 +4,7 @@ import time
 
 import gym
 import torch
+import pickle
 
 from cs285.infrastructure import pytorch_util as ptu
 from cs285.infrastructure.logger import Logger
@@ -35,7 +36,6 @@ class RL_Trainer(object):
             use_gpu=not self.params['no_gpu'],
             gpu_id=self.params['which_gpu']
         )
-
         #############
         ## ENV
         #############
@@ -51,13 +51,11 @@ class RL_Trainer(object):
         # Is this env continuous, or self.discrete?
         discrete = isinstance(self.env.action_space, gym.spaces.Discrete)
         self.params['agent_params']['discrete'] = discrete
-
         # Observation and action sizes
         ob_dim = self.env.observation_space.shape[0]
         ac_dim = self.env.action_space.n if discrete else self.env.action_space.shape[0]
         self.params['agent_params']['ac_dim'] = ac_dim
         self.params['agent_params']['ob_dim'] = ob_dim
-
         # simulation timestep, will be used for video saving
         if 'model' in dir(self.env):
             self.fps = 1/self.env.model.opt.timestep
@@ -67,7 +65,6 @@ class RL_Trainer(object):
         #############
         ## AGENT
         #############
-
         agent_class = self.params['agent_class']
         self.agent = agent_class(self.env, self.params['agent_params'])
 
@@ -96,7 +93,6 @@ class RL_Trainer(object):
                 self.log_video = True
             else:
                 self.log_video = False
-
             # decide if metrics should be logged
             if itr % self.params['scalar_log_freq'] == 0:
                 self.log_metrics = True
@@ -116,12 +112,12 @@ class RL_Trainer(object):
             # relabel the collected obs with actions from a provided expert policy
             if relabel_with_expert and itr>=start_relabel_with_expert:
                 paths = self.do_relabel_with_expert(expert_policy, paths)  # HW1: implement this function below
-
+            
             # add collected data to replay buffer
             self.agent.add_to_replay_buffer(paths)
-
             # train agent (using sampled data from replay buffer)
             training_logs = self.train_agent()  # HW1: implement this function below
+          
 
             # log/save
             if self.log_video or self.log_metrics:
@@ -164,7 +160,9 @@ class RL_Trainer(object):
                 # (2) collect `self.params['batch_size']` transitions
         
         if itr == 0:
-            return load_initial_expertdata, 0, None
+            with open(load_initial_expertdata, 'rb') as f:
+              loaded_paths = pickle.load(f)
+            return loaded_paths, 0, None
 
         # TODO collect `batch_size` samples to be used for training
         # HINT1: use sample_trajectories from utils
@@ -196,7 +194,7 @@ class RL_Trainer(object):
             # TODO use the sampled data to train an agent
             # HINT: use the agent's train function
             # HINT: keep the agent's training log for debugging   ???
-            train_log = train(ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch)
+            train_log = self.agent.train(ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch)
             all_logs.append(train_log)
         return all_logs
 

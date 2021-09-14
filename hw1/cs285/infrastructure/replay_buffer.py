@@ -33,7 +33,6 @@ class ReplayBuffer(object):
         # our arrays
         observations, actions, rewards, next_observations, terminals = (
             convert_listofrollouts(paths, concat_rew))
-
         if self.obs is None:
             self.obs = observations[-self.max_size:]
             self.acs = actions[-self.max_size:]
@@ -76,13 +75,12 @@ class ReplayBuffer(object):
         ## HINT 1: use np.random.permutation to sample random indices
         ## HINT 2: return corresponding data points from each array (i.e., not different indices from each array)
         ## HINT 3: look at the sample_recent_data function below
-
         idx = np.random.permutation(self.obs.shape[0])[-batch_size:]
-        sample_obs = [self.obs[i] for i in idx]
-        sample_acs = [self.acs[i] for i in idx]
-        sample_rews = [self.rews[i] for i in idx]
-        sample_next_obs = [self.next_obs[i] for i in idx]
-        sample_terminals = [self.terminals[i] for i in idx]
+        sample_obs = np.vstack([self.obs[i] for i in idx])
+        sample_acs = np.vstack([self.acs[i] for i in idx])
+        sample_rews = np.vstack([self.rews[i] for i in idx])
+        sample_next_obs = np.vstack([self.next_obs[i] for i in idx])
+        sample_terminals = np.vstack([self.terminals[i] for i in idx])
 
         return sample_obs, sample_acs, sample_rews, sample_next_obs, sample_terminals
 

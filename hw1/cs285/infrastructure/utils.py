@@ -27,7 +27,7 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 
         # use the most recent ob to decide what to do
         obs.append(ob)
-        ac = policy.get_action(obs) # HINT: query the policy's get_action function
+        ac = policy.get_action(ob) # HINT: query the policy's get_action function
         ac = ac[0]
         acs.append(ac)
 
@@ -61,7 +61,7 @@ def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, r
     paths = []
     while timesteps_this_batch < min_timesteps_per_batch:
 
-        path = sample_trajectories(env,policy,max_path_length)
+        path = sample_trajectory(env,policy,max_path_length)
         timesteps_this_batch += get_pathlength(path)
         paths.append(path)
 
@@ -106,6 +106,7 @@ def convert_listofrollouts(paths, concat_rew=True):
         and return separate arrays,
         where each array is a concatenation of that array from across the rollouts
     """
+    
     observations = np.concatenate([path["observation"] for path in paths])
     actions = np.concatenate([path["action"] for path in paths])
     if concat_rew:
